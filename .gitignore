@@ -1,0 +1,51 @@
+# Documentation
+docs/
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build and distribution outputs
+dist/
+build/
+out/
+.next/
+coverage/
+*.tsbuildinfo
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.pem
+*.key
+*.cert
+*.crt
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+*.log
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE and Editor directories
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# Cloudflare & Docker local volumes/temporary files
+.wrangler/
+.turbo/

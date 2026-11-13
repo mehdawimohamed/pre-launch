@@ -1,0 +1,45 @@
+name: Bug Report
+description: Create a report to help us fix a defect or unexpected behavior
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting a bug. Please ensure you do NOT include secrets, passwords, tokens, or personal identifiable information in this public issue.
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: Exact steps to reproduce the behavior.
+      placeholder: |
+        1. Go to '...'
+        2. Click on '....'
+        3. Scroll down to '....'
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Info
+      description: OS version, browser, Node version, device, etc.
+      placeholder: |
+        - OS: [e.g. Windows, Ubuntu, macOS]
+        - Node Version: [e.g. 22.x]
+        - Browser (if applicable): [e.g. Chrome, Firefox]
+    validations:
+      required: false
