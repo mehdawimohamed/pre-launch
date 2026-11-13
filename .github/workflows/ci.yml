@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
+
       - name: Run lint
         run: pnpm run lint
 
@@ -64,6 +67,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Run typecheck
         run: pnpm run typecheck
@@ -105,6 +111,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
+
       - name: Run Prisma migrations
         env:
           DATABASE_URL: postgresql://postgres:postgrespassword@localhost:5432/crowdfunding_test?schema=public
@@ -137,6 +146,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm run prisma:generate
 
       - name: Run build
         run: pnpm run build
