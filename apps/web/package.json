@@ -11,10 +11,13 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css}\""
   },
   "dependencies": {
-    "@crowdfunding/shared": "workspace:*",
-    "next": "15.5.28",
+    "@pre-launch/shared": "workspace:*",
+    "@tailwindcss/postcss": "4.3.3",
+    "next": "16.4.3",
+    "postcss": "8.5.32",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "tailwindcss": "4.3.3"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "7.0.1",
@@ -23,12 +26,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "4.7.0",
-    "autoprefixer": "10.6.2",
     "jsdom": "26.1.0",
-    "postcss": "8.5.32",
-    "tailwindcss": "3.4.19",
-    "tailwindcss-animate": "1.0.7",
-    "typescript": "5.7.3",
-    "vitest": "3.2.7"
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
   }
 }

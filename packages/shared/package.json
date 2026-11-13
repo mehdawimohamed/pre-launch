@@ -1,5 +1,5 @@
 {
-  "name": "@crowdfunding/shared",
+  "name": "@pre-launch/shared",
   "version": "0.1.0",
   "private": true,
   "main": "./src/index.ts",
@@ -20,6 +20,6 @@
     "zod": "3.24.2"
   },
   "devDependencies": {
-    "typescript": "5.7.3"
+    "typescript": "6.0.3"
   }
 }

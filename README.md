@@ -17,8 +17,6 @@ Market demand testing platform for Kickstarter-style crowdfunding in Tunisia and
 - **Multilingual Support:** Arabic (RTL embedded in LTR shell), French, and English.
 - **Architecture:** Monorepo with Next.js web application, NestJS API, PostgreSQL database, and Cloudflare storage/tunnels.
 
-For product decisions and full architecture, see [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
-
 ---
 
 ## Local Development (Coming Soon)
