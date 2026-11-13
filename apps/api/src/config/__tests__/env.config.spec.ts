@@ -26,8 +26,25 @@ describe('Config Module & env validation', () => {
     ).toThrow('[ConfigValidationError]');
   });
 
-  it('applies defaults when env is empty', () => {
-    const config = validateConfig({});
+  it('fails fast when DATABASE_URL is missing or empty', () => {
+    expect(() =>
+      validateConfig({
+        PORT: '3001',
+      }),
+    ).toThrow('[ConfigValidationError]');
+
+    expect(() =>
+      validateConfig({
+        DATABASE_URL: '',
+      }),
+    ).toThrow('[ConfigValidationError]');
+  });
+
+  it('applies defaults for optional fields when DATABASE_URL is provided', () => {
+    const config = validateConfig({
+      DATABASE_URL: 'postgresql://postgres:pass@localhost:5432/testdb',
+    });
+    expect(config.DATABASE_URL).toBe('postgresql://postgres:pass@localhost:5432/testdb');
     expect(config.PORT).toBe(3001);
     expect(config.NODE_ENV).toBe('development');
     expect(config.CORS_ALLOWED_ORIGINS).toEqual(['http://localhost:3000']);
@@ -37,6 +54,7 @@ describe('Config Module & env validation', () => {
 
   it('parses comma-separated CORS origins into an exact allowlist', () => {
     const config = validateConfig({
+      DATABASE_URL: 'postgresql://postgres:pass@localhost:5432/testdb',
       CORS_ALLOWED_ORIGINS: 'https://prelaunch.tn, https://admin.prelaunch.tn',
     });
     expect(config.CORS_ALLOWED_ORIGINS).toEqual([
@@ -46,9 +64,10 @@ describe('Config Module & env validation', () => {
   });
 
   it('correctly enables TRUST_TUNNEL_PROXY only when explicitly true or 1', () => {
-    expect(validateConfig({ TRUST_TUNNEL_PROXY: 'false' }).TRUST_TUNNEL_PROXY).toBe(false);
-    expect(validateConfig({ TRUST_TUNNEL_PROXY: '0' }).TRUST_TUNNEL_PROXY).toBe(false);
-    expect(validateConfig({ TRUST_TUNNEL_PROXY: 'true' }).TRUST_TUNNEL_PROXY).toBe(true);
-    expect(validateConfig({ TRUST_TUNNEL_PROXY: '1' }).TRUST_TUNNEL_PROXY).toBe(true);
+    const base = { DATABASE_URL: 'postgresql://postgres:pass@localhost:5432/testdb' };
+    expect(validateConfig({ ...base, TRUST_TUNNEL_PROXY: 'false' }).TRUST_TUNNEL_PROXY).toBe(false);
+    expect(validateConfig({ ...base, TRUST_TUNNEL_PROXY: '0' }).TRUST_TUNNEL_PROXY).toBe(false);
+    expect(validateConfig({ ...base, TRUST_TUNNEL_PROXY: 'true' }).TRUST_TUNNEL_PROXY).toBe(true);
+    expect(validateConfig({ ...base, TRUST_TUNNEL_PROXY: '1' }).TRUST_TUNNEL_PROXY).toBe(true);
   });
 });

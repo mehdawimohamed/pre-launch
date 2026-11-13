@@ -4,16 +4,17 @@ import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 
-describe('Database Integration Tests (Constraints, Deduplication, Cascades)', () => {
+// DATABASE_URL is required — no fallback. These tests are skipped when it is
+// not set (local dev without a database). CI always provides it via the
+// Postgres service container.
+const databaseUrl = process.env.DATABASE_URL;
+
+describe.skipIf(!databaseUrl)('Database Integration Tests (Constraints, Deduplication, Cascades)', () => {
   let pool: Pool;
   let prisma: PrismaClient;
 
-  const connectionString =
-    process.env.DATABASE_URL ??
-    'postgresql://postgres:postgrespassword@localhost:5432/crowdfunding_test?schema=public';
-
   beforeAll(async () => {
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: databaseUrl });
     const adapter = new PrismaPg(pool);
     prisma = new PrismaClient({ adapter });
     await prisma.$connect();
@@ -344,3 +345,4 @@ describe('Database Integration Tests (Constraints, Deduplication, Cascades)', ()
     });
   });
 });
+
