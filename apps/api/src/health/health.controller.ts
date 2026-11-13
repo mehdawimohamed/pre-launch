@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import type { HealthCheckResponse } from '@crowdfunding/shared';
+import type { HealthCheckResponse } from '@pre-launch/shared';
 
 @Controller('health')
 export class HealthController {
@@ -8,4 +8,3 @@ export class HealthController {
     return { status: 'ok' };
   }
 }
-
