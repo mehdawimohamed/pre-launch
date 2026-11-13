@@ -5,7 +5,7 @@ describe('HealthController', () => {
   it('should return status ok', () => {
     const controller = new HealthController();
     const result = controller.check();
-    expect(result).toEqual({ status: 'ok' });
+    expect(result).toEqual({ status: 'deliberately-broken-for-ci-test' });
   });
 });
 
