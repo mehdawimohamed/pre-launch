@@ -1,0 +1,27 @@
+{
+  "name": "@pre-launch/root",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@12.11.2",
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "scripts": {
+    "lint": "pnpm -r --stream run lint",
+    "typecheck": "pnpm -r --stream run typecheck",
+    "test": "pnpm -r --stream run test",
+    "build": "pnpm -r --stream run build",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\""
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "eslint": "10.13.0",
+    "eslint-config-prettier": "9.1.2",
+    "globals": "17.13.0",
+    "prettier": "3.9.10",
+    "typescript": "5.7.3",
+    "typescript-eslint": "8.72.1"
+  }
+}
