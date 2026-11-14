@@ -34,8 +34,9 @@ COPY tsconfig.base.json ./
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
 
-# Build shared package first, then api
+# Build shared package first, generate prisma client, then build api
 RUN pnpm --filter @pre-launch/shared run build
+RUN pnpm --filter @pre-launch/api run prisma:generate
 RUN pnpm --filter @pre-launch/api run build
 
 # Prune devDependencies to keep only production dependencies
