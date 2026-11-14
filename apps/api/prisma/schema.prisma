@@ -1,0 +1,154 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                 String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  googleSub          String             @unique @map("google_sub")
+  email              String             @unique @db.Citext
+  name               String
+  avatarUrl          String?            @map("avatar_url")
+  locale             String             @default("fr")
+  role               String             @default("user")
+  createdAt          DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastLoginAt        DateTime?          @map("last_login_at") @db.Timestamptz(6)
+
+  sessions           Session[]
+  createdCampaigns   Campaign[]         @relation("CreatorCampaigns")
+  reviewedCampaigns  Campaign[]         @relation("ReviewerCampaigns")
+  pledges            Pledge[]
+  aiJobs             AiEnhancementJob[]
+  notifications      Notification[]
+  pushSubscriptions  PushSubscription[]
+  events             Event[]
+
+  @@map("users")
+}
+
+model Session {
+  idHash     Bytes     @id @map("id_hash")
+  userId     String    @map("user_id") @db.Uuid
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt  DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(6)
+  userAgent  String?   @map("user_agent")
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "sessions_user_idx")
+  @@index([expiresAt], map: "sessions_expires_idx")
+  @@map("sessions")
+}
+
+model Campaign {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId        String             @map("creator_id") @db.Uuid
+  slug             String             @unique
+  title            String
+  pitch            String
+  category         String
+  story            Json               @db.JsonB
+  goalTnd          Int                @map("goal_tnd")
+  deadline         DateTime           @db.Timestamptz(6)
+  teamInfo         String?            @map("team_info")
+  links            Json               @default("[]") @db.JsonB
+  coverImageKey    String?            @map("cover_image_key")
+  status           String             @default("draft")
+  rejectionReason  String?            @map("rejection_reason")
+  reviewedBy       String?            @map("reviewed_by") @db.Uuid
+  reviewedAt       DateTime?          @map("reviewed_at") @db.Timestamptz(6)
+  publishedAt      DateTime?          @map("published_at") @db.Timestamptz(6)
+  createdAt        DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime           @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  creator          User               @relation("CreatorCampaigns", fields: [creatorId], references: [id], onDelete: Restrict)
+  reviewer         User?              @relation("ReviewerCampaigns", fields: [reviewedBy], references: [id])
+  pledges          Pledge[]
+  aiJobs           AiEnhancementJob[]
+  events           Event[]
+
+  @@index([creatorId, createdAt(sort: Desc)], map: "campaigns_creator_idx")
+  @@map("campaigns")
+}
+
+model Pledge {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  campaignId  String   @map("campaign_id") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign    Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, campaignId], name: "user_campaign_pledge_unique")
+  @@index([campaignId], map: "pledges_campaign_idx")
+  @@map("pledges")
+}
+
+model AiEnhancementJob {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  campaignId      String    @map("campaign_id") @db.Uuid
+  status          String    @default("queued")
+  sourceImageKey  String    @map("source_image_key")
+  resultImageKey  String?   @map("result_image_key")
+  error           String?
+  accepted        Boolean   @default(false)
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt     DateTime? @map("completed_at") @db.Timestamptz(6)
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign        Campaign  @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)], map: "ai_jobs_user_idx")
+  @@map("ai_enhancement_jobs")
+}
+
+model Notification {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  type       String
+  payload    Json      @default("{}") @db.JsonB
+  dedupeKey  String?   @map("dedupe_key")
+  readAt     DateTime? @map("read_at") @db.Timestamptz(6)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt(sort: Desc)], map: "notifications_user_idx")
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "push_user_idx")
+  @@map("push_subscriptions")
+}
+
+model Event {
+  id          BigInt    @id @default(autoincrement())
+  type        String
+  userId      String?   @map("user_id") @db.Uuid
+  campaignId  String?   @map("campaign_id") @db.Uuid
+  meta        Json      @default("{}") @db.JsonB
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  campaign    Campaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  @@index([type, createdAt(sort: Desc)], map: "events_type_time_idx")
+  @@index([campaignId, type], map: "events_campaign_idx")
+  @@map("events")
+}
