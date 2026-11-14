@@ -3,6 +3,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { APP_GUARD } from '@nestjs/core';
 import { HealthModule } from './health/health.module';
 import { ConfigModule } from './config/config.module';
+import { PrismaModule } from './prisma/prisma.module';
 import { getConfig } from './config/env.config';
 import { createLoggingModule } from './common/logging.module';
 import { AppThrottlerGuard } from './common/throttler.guard';
@@ -10,6 +11,7 @@ import { AppThrottlerGuard } from './common/throttler.guard';
 @Module({
   imports: [
     ConfigModule,
+    PrismaModule,
     createLoggingModule(),
     ThrottlerModule.forRootAsync({
       useFactory: () => {

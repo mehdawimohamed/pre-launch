@@ -21,6 +21,7 @@ describe('API Foundation Integration & Security Tests', () => {
     setTestConfig({
       NODE_ENV: 'production', // Test production error hiding
       PORT: 3001,
+      DATABASE_URL: 'postgresql://postgres:postgrespassword@localhost:5432/crowdfunding_test?schema=public',
       CORS_ALLOWED_ORIGINS: ['https://allowed.example.com'],
       TRUST_TUNNEL_PROXY: false,
       THROTTLE_TTL_MS: 60000,
