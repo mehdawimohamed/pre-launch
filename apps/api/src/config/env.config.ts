@@ -19,6 +19,29 @@ export const envSchema = z.object({
     .transform((val) => val === 'true' || val === '1'),
   THROTTLE_TTL_MS: z.coerce.number().int().positive().default(60000),
   THROTTLE_LIMIT: z.coerce.number().int().positive().default(60),
+
+  // Google OAuth Client ID for ID token audience validation
+  GOOGLE_CLIENT_ID: z.string().default('placeholder-google-client-id.apps.googleusercontent.com'),
+
+  // Admin emails allowlist (comma-separated, case-insensitive)
+  ADMIN_EMAILS: z
+    .string()
+    .default('admin@example.com')
+    .transform((val) =>
+      val
+        .split(',')
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean),
+    ),
+
+  // Session lifetime in seconds (default: 7 days = 604800s)
+  SESSION_LIFETIME_SECONDS: z.coerce.number().int().positive().default(604800),
+
+  // Cookie Secure flag override for local dev without HTTPS
+  COOKIE_SECURE_OVERRIDE: z
+    .enum(['true', 'false', '1', '0'])
+    .optional()
+    .transform((val) => (val !== undefined ? val === 'true' || val === '1' : undefined)),
 });
 
 export type AppConfig = z.infer<typeof envSchema>;

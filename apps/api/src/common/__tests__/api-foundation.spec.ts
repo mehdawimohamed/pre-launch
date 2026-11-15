@@ -26,6 +26,10 @@ describe('API Foundation Integration & Security Tests', () => {
       TRUST_TUNNEL_PROXY: false,
       THROTTLE_TTL_MS: 60000,
       THROTTLE_LIMIT: 3, // Low limit to test 429
+      GOOGLE_CLIENT_ID: 'placeholder-google-client-id.apps.googleusercontent.com',
+      ADMIN_EMAILS: ['admin@example.com'],
+      SESSION_LIFETIME_SECONDS: 604800,
+      COOKIE_SECURE_OVERRIDE: false,
     });
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
