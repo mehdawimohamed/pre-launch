@@ -50,6 +50,10 @@ describe('Config Module & env validation', () => {
     expect(config.CORS_ALLOWED_ORIGINS).toEqual(['http://localhost:3000']);
     expect(config.TRUST_TUNNEL_PROXY).toBe(false);
     expect(config.THROTTLE_LIMIT).toBe(60);
+    expect(config.GOOGLE_CLIENT_ID).toBe('placeholder-google-client-id.apps.googleusercontent.com');
+    expect(config.ADMIN_EMAILS).toEqual(['admin@example.com']);
+    expect(config.SESSION_LIFETIME_SECONDS).toBe(604800);
+    expect(config.COOKIE_SECURE_OVERRIDE).toBeUndefined();
   });
 
   it('parses comma-separated CORS origins into an exact allowlist', () => {
@@ -69,5 +73,24 @@ describe('Config Module & env validation', () => {
     expect(validateConfig({ ...base, TRUST_TUNNEL_PROXY: '0' }).TRUST_TUNNEL_PROXY).toBe(false);
     expect(validateConfig({ ...base, TRUST_TUNNEL_PROXY: 'true' }).TRUST_TUNNEL_PROXY).toBe(true);
     expect(validateConfig({ ...base, TRUST_TUNNEL_PROXY: '1' }).TRUST_TUNNEL_PROXY).toBe(true);
+  });
+
+  it('parses admin emails allowlist to normalized lowercase strings', () => {
+    const config = validateConfig({
+      DATABASE_URL: 'postgresql://postgres:pass@localhost:5432/testdb',
+      ADMIN_EMAILS: 'Admin@Prelaunch.tn, SuperAdmin@Example.com ',
+    });
+    expect(config.ADMIN_EMAILS).toEqual([
+      'admin@prelaunch.tn',
+      'superadmin@example.com',
+    ]);
+  });
+
+  it('parses cookie secure override boolean values', () => {
+    const base = { DATABASE_URL: 'postgresql://postgres:pass@localhost:5432/testdb' };
+    expect(validateConfig({ ...base, COOKIE_SECURE_OVERRIDE: 'false' }).COOKIE_SECURE_OVERRIDE).toBe(false);
+    expect(validateConfig({ ...base, COOKIE_SECURE_OVERRIDE: 'true' }).COOKIE_SECURE_OVERRIDE).toBe(true);
+    expect(validateConfig({ ...base, COOKIE_SECURE_OVERRIDE: '1' }).COOKIE_SECURE_OVERRIDE).toBe(true);
+    expect(validateConfig({ ...base, COOKIE_SECURE_OVERRIDE: '0' }).COOKIE_SECURE_OVERRIDE).toBe(false);
   });
 });
