@@ -195,7 +195,7 @@ describe('Authentication & Sessions E2E Tests (Step 1.3)', () => {
 
     it('asserts Secure cookie flag is present when COOKIE_SECURE_OVERRIDE=true or in production', async () => {
       setTestConfig({
-        NODE_ENV: 'production',
+        NODE_ENV: 'test',
         PORT: 3001,
         DATABASE_URL: DB_URL,
         CORS_ALLOWED_ORIGINS: [TEST_ALLOWED_ORIGIN],
@@ -238,6 +238,122 @@ describe('Authentication & Sessions E2E Tests (Step 1.3)', () => {
         SESSION_LIFETIME_SECONDS: 3600,
         COOKIE_SECURE_OVERRIDE: false,
       });
+    });
+
+    it('ignores COOKIE_SECURE_OVERRIDE=false when NODE_ENV is production (always Secure)', async () => {
+      setTestConfig({
+        NODE_ENV: 'production',
+        PORT: 3001,
+        DATABASE_URL: DB_URL,
+        CORS_ALLOWED_ORIGINS: [TEST_ALLOWED_ORIGIN],
+        TRUST_TUNNEL_PROXY: false,
+        THROTTLE_TTL_MS: 60000,
+        THROTTLE_LIMIT: 100,
+        GOOGLE_CLIENT_ID: 'test-google-client-id.apps.googleusercontent.com',
+        ADMIN_EMAILS: [ADMIN_EMAIL],
+        SESSION_LIFETIME_SECONDS: 3600,
+        COOKIE_SECURE_OVERRIDE: false, // Must be ignored because NODE_ENV === 'production'
+      });
+
+      mockVerifier.mockPayload = {
+        sub: 'google-sub-prod-secure',
+        email: 'prod-secure@example.com',
+        email_verified: true,
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/auth/google')
+        .set('Origin', TEST_ALLOWED_ORIGIN)
+        .send({ idToken: 'valid-token' });
+
+      expect(res.status).toBe(200);
+      const setCookie = res.headers['set-cookie'];
+      const cookieStr = Array.isArray(setCookie) ? setCookie[0] : setCookie;
+      expect(cookieStr.toLowerCase()).toContain('secure');
+
+      // Reset back to dev override
+      setTestConfig({
+        NODE_ENV: 'test',
+        PORT: 3001,
+        DATABASE_URL: DB_URL,
+        CORS_ALLOWED_ORIGINS: [TEST_ALLOWED_ORIGIN],
+        TRUST_TUNNEL_PROXY: false,
+        THROTTLE_TTL_MS: 60000,
+        THROTTLE_LIMIT: 100,
+        GOOGLE_CLIENT_ID: 'test-google-client-id.apps.googleusercontent.com',
+        ADMIN_EMAILS: [ADMIN_EMAIL],
+        SESSION_LIFETIME_SECONDS: 3600,
+        COOKIE_SECURE_OVERRIDE: false,
+      });
+    });
+
+    it('recomputes role from ADMIN_EMAILS allowlist in both directions (promote and demote)', async () => {
+      const targetEmail = 'demote-test@example.com';
+      const targetSub = 'demote-test-sub';
+
+      // 1. Initial login with email in ADMIN_EMAILS -> promoted to admin
+      setTestConfig({
+        NODE_ENV: 'test',
+        PORT: 3001,
+        DATABASE_URL: DB_URL,
+        CORS_ALLOWED_ORIGINS: [TEST_ALLOWED_ORIGIN],
+        TRUST_TUNNEL_PROXY: false,
+        THROTTLE_TTL_MS: 60000,
+        THROTTLE_LIMIT: 100,
+        GOOGLE_CLIENT_ID: 'test-google-client-id.apps.googleusercontent.com',
+        ADMIN_EMAILS: [ADMIN_EMAIL, targetEmail],
+        SESSION_LIFETIME_SECONDS: 3600,
+        COOKIE_SECURE_OVERRIDE: false,
+      });
+
+      mockVerifier.mockPayload = {
+        sub: targetSub,
+        email: targetEmail,
+        email_verified: true,
+        name: 'Target User',
+      };
+
+      const login1 = await request(app.getHttpServer())
+        .post('/auth/google')
+        .set('Origin', TEST_ALLOWED_ORIGIN)
+        .send({ idToken: 'token' });
+
+      expect(login1.status).toBe(200);
+      expect(login1.body.user.role).toBe('admin');
+
+      const userAfterLogin1 = await prisma.user.findUnique({
+        where: { googleSub: targetSub },
+      });
+      expect(userAfterLogin1?.role).toBe('admin');
+
+      // 2. Remove email from ADMIN_EMAILS allowlist
+      setTestConfig({
+        NODE_ENV: 'test',
+        PORT: 3001,
+        DATABASE_URL: DB_URL,
+        CORS_ALLOWED_ORIGINS: [TEST_ALLOWED_ORIGIN],
+        TRUST_TUNNEL_PROXY: false,
+        THROTTLE_TTL_MS: 60000,
+        THROTTLE_LIMIT: 100,
+        GOOGLE_CLIENT_ID: 'test-google-client-id.apps.googleusercontent.com',
+        ADMIN_EMAILS: [ADMIN_EMAIL], // targetEmail removed!
+        SESSION_LIFETIME_SECONDS: 3600,
+        COOKIE_SECURE_OVERRIDE: false,
+      });
+
+      // 3. Login again -> role recomputed to 'user' (demoted)
+      const login2 = await request(app.getHttpServer())
+        .post('/auth/google')
+        .set('Origin', TEST_ALLOWED_ORIGIN)
+        .send({ idToken: 'token' });
+
+      expect(login2.status).toBe(200);
+      expect(login2.body.user.role).toBe('user');
+
+      const userAfterLogin2 = await prisma.user.findUnique({
+        where: { googleSub: targetSub },
+      });
+      expect(userAfterLogin2?.role).toBe('user');
     });
 
     // Negative tests for Google ID token verification
@@ -373,6 +489,35 @@ describe('Authentication & Sessions E2E Tests (Step 1.3)', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.message).toBe('Invalid or expired session');
+    });
+
+    it('rejects a valid session token sent via Bearer authorization header with 401 (cookies only)', async () => {
+      const user = await prisma.user.create({
+        data: {
+          googleSub: 'bearer-sub',
+          email: 'bearer@example.com',
+          name: 'Bearer User',
+        },
+      });
+
+      const rawToken = crypto.randomBytes(32).toString('hex');
+      const idHash = authService.hashToken(rawToken);
+
+      await prisma.session.create({
+        data: {
+          idHash,
+          userId: user.id,
+          expiresAt: new Date(Date.now() + 3600000), // valid
+        },
+      });
+
+      // Send token via Authorization: Bearer <token> without cookie
+      const res = await request(app.getHttpServer())
+        .get('/me')
+        .set('Authorization', `Bearer ${rawToken}`);
+
+      expect(res.status).toBe(401);
+      expect(res.body.message).toBe('Authentication required');
     });
 
     it('rejects revoked sessions', async () => {

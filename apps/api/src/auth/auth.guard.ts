@@ -23,21 +23,13 @@ export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
 
-    // Parse cookie from Cookie header
+    // Parse cookie from Cookie header (sessions are read ONLY from the session cookie)
     const cookieHeader = request.headers.cookie;
     let rawToken: string | undefined;
 
     if (cookieHeader) {
       const parsedCookies = parseCookie(cookieHeader);
       rawToken = parsedCookies[SESSION_COOKIE_NAME];
-    }
-
-    // Also support Authorization: Bearer <token> fallback if cookie not present
-    if (!rawToken && request.headers.authorization) {
-      const parts = request.headers.authorization.split(' ');
-      if (parts.length === 2 && parts[0] === 'Bearer') {
-        rawToken = parts[1];
-      }
     }
 
     if (!rawToken) {

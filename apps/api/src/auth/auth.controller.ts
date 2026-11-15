@@ -23,10 +23,13 @@ export class AuthController {
 
   private isCookieSecure(): boolean {
     const config = getConfig();
+    if (config.NODE_ENV === 'production') {
+      return true;
+    }
     if (config.COOKIE_SECURE_OVERRIDE !== undefined) {
       return config.COOKIE_SECURE_OVERRIDE;
     }
-    return config.NODE_ENV === 'production';
+    return false;
   }
 
   @Post('google')
