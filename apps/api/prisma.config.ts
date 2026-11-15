@@ -1,4 +1,12 @@
+import path from 'node:path';
+import fs from 'node:fs';
 import { defineConfig } from 'prisma/config';
+
+// Load root .env so prisma commands work from apps/api
+const rootEnv = path.resolve(__dirname, '..', '..', '.env');
+if (fs.existsSync(rootEnv)) {
+  process.loadEnvFile(rootEnv);
+}
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
@@ -14,4 +22,3 @@ export default defineConfig({
       'postgresql://postgres:postgrespassword@localhost:5432/crowdfunding_test?schema=public',
   },
 });
-

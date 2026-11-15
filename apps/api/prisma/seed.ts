@@ -1,6 +1,14 @@
+import path from 'node:path';
+import fs from 'node:fs';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
+
+// Load root .env so the seed script works from apps/api
+const rootEnv = path.resolve(__dirname, '..', '..', '..', '.env');
+if (fs.existsSync(rootEnv)) {
+  process.loadEnvFile(rootEnv);
+}
 
 const connectionString =
   process.env.DATABASE_URL ??

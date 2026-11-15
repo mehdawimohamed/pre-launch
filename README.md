@@ -41,16 +41,28 @@ pnpm test
 pnpm build
 ```
 
+### Local setup
+
+1. Copy the root template: `cp .env.example .env`
+2. Fill in your development credentials (database, OAuth, etc.)
+3. Start the database: `docker compose -f deploy/docker-compose.dev.yml up -d` (or your local Postgres)
+4. Run `pnpm install`, then `pnpm --filter @pre-launch/api prisma:generate`
+
+The project has **one** `.env` file at the repo root. Each app resolves it from its
+own location, so `pnpm dev`, `prisma migrate`, and `next dev` all read the same file
+regardless of the current working directory. In CI and production, plain environment
+variables are used instead — no `.env` file is needed.
+
 ---
 
 ## Environment Variables Convention
 
 This repository is **strictly public**. Never commit secrets, tokens, private keys, or `.env` files.
-All configuration parameters are documented with dummy placeholder values in `.env.example` files:
-- Root template: `.env.example`
-- Workspace templates (once created): `apps/web/.env.example`, `apps/api/.env.example`
+All configuration parameters are documented with placeholder values in the root `.env.example`.
 
-To configure your local environment, copy `.env.example` to `.env` and provide your development credentials. `.env` is ignored by git.
+- **One env file:** `.env` lives at the repo root only. There are no env files inside `apps/` or `packages/`.
+- **Browser safety:** Only `NEXT_PUBLIC_*` variables reach the browser; never prefix a secret with `NEXT_PUBLIC_`.
+- **Production:** Variables come from the compose environment or the host, not from a file.
 
 ---
 
