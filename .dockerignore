@@ -7,3 +7,5 @@
 .turbo
 docs
 *.log
+.env
+.env.*
