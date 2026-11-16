@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 import { useAuth } from '@/lib/auth-context';
@@ -16,8 +17,28 @@ export function Header() {
   const { user, isLoading, logout } = useAuth();
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
-  return (
+  // Resolve portal target on mount (client-only)
+  useEffect(() => {
+    setPortalRoot(document.body);
+  }, []);
+
+  // Close modal on Escape and lock body scroll while open
+  useEffect(() => {
+    if (!showLoginModal) return;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowLoginModal(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = '';
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showLoginModal]);
+
+  const header = (
     <header className="sticky top-0 z-40 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand / Logo */}
@@ -189,18 +210,27 @@ export function Header() {
         </div>
       )}
 
-      {/* Login Dialog Modal */}
-      {showLoginModal && (
+      {/* Login Dialog — rendered via portal to escape header's backdrop-blur containing block */}
+    </header>
+  );
+
+  const loginModal = showLoginModal && portalRoot
+    ? createPortal(
         <div
           role="dialog"
           aria-modal="true"
+          aria-label={t('login')}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs"
+          onClick={(e) => {
+            // Close on backdrop click
+            if (e.target === e.currentTarget) setShowLoginModal(false);
+          }}
         >
           <div className="w-full max-w-md bg-white rounded-2xl p-6 shadow-xl border border-slate-100 relative">
             <button
               onClick={() => setShowLoginModal(false)}
               aria-label="Fermer la boîte de dialogue"
-              className="absolute top-4 end-4 text-slate-400 hover:text-slate-600 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg"
+              className="absolute top-4 end-4 text-slate-400 hover:text-slate-600 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500"
             >
               <X className="w-5 h-5" />
             </button>
@@ -219,8 +249,15 @@ export function Header() {
               />
             </div>
           </div>
-        </div>
-      )}
-    </header>
+        </div>,
+        portalRoot,
+      )
+    : null;
+
+  return (
+    <>
+      {header}
+      {loginModal}
+    </>
   );
 }
