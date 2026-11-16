@@ -293,6 +293,49 @@ describe('Campaign API E2E Tests (Step 2.1)', () => {
       expect(res2.body.campaign.slug).not.toBe(res1.body.campaign.slug);
     });
 
+    it('survives concurrent unique-constraint collisions on insert without returning 500', async () => {
+      const { cookie } = await createAuthenticatedUser('race_collision@example.com', 'Racer');
+
+      // Intercept prisma.campaign.create to simulate a unique constraint race condition on first attempt
+      let callCount = 0;
+      const originalCreate = prisma.campaign.create.bind(prisma.campaign);
+      const spy = vi.spyOn(prisma.campaign, 'create').mockImplementation(async (args) => {
+        callCount++;
+        if (callCount === 1) {
+          // Simulate unique constraint collision from another concurrent transaction
+          const error = new (await import('@prisma/client')).Prisma.PrismaClientKnownRequestError(
+            'Unique constraint failed on the fields: (`slug`)',
+            {
+              code: 'P2002',
+              clientVersion: '7.10.1',
+              meta: { target: ['slug'] },
+            },
+          );
+          throw error;
+        }
+        return originalCreate(args);
+      });
+
+      const res = await request(app.getHttpServer())
+        .post('/campaigns')
+        .set('Origin', TEST_ALLOWED_ORIGIN)
+        .set('Cookie', cookie)
+        .send({
+          title: 'Simulated Concurrent Collision',
+          pitch: 'Testing retry mechanism on unique constraint violation.',
+          category: 'games',
+          story: validStory,
+          goalTnd: 2500,
+          deadline: getFutureDate(),
+        });
+
+      spy.mockRestore();
+
+      expect(res.status).toBe(201);
+      expect(callCount).toBe(2); // First failed with P2002, second succeeded
+      expect(res.body.campaign.slug).toMatch(/^simulated-concurrent-collision-[a-z0-9]{6}$/);
+    });
+
     // Validation negative tests
     it('rejects title shorter than 5 chars (400)', async () => {
       const { cookie } = await createAuthenticatedUser('val1@example.com', 'Val User');
@@ -464,6 +507,47 @@ describe('Campaign API E2E Tests (Step 2.1)', () => {
         });
 
       expect(res.status).toBe(400);
+    });
+
+    it('rejects story containing image nodes (remote media disallowed in story) (400)', async () => {
+      const { cookie } = await createAuthenticatedUser('val_img@example.com', 'Val User');
+
+      const imageNodeStory = {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'Here is an image:',
+              },
+            ],
+          },
+          {
+            type: 'image',
+            attrs: {
+              src: 'https://example.com/some-image.png',
+            },
+          },
+        ],
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/campaigns')
+        .set('Origin', TEST_ALLOWED_ORIGIN)
+        .set('Cookie', cookie)
+        .send({
+          title: 'Valid Campaign Title',
+          pitch: 'Valid pitch for disallowed image node test.',
+          category: 'art',
+          story: imageNodeStory,
+          goalTnd: 1000,
+          deadline: getFutureDate(),
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('disallowed node type "image"');
     });
 
     it('rejects disallowed story node types (e.g. script, iframe, rawHtml) (400)', async () => {
@@ -757,6 +841,36 @@ describe('Campaign API E2E Tests (Step 2.1)', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.campaign.status).toBe('pending');
+    });
+
+    it('rejects submitting a draft campaign whose deadline has already passed (400)', async () => {
+      const { user, cookie } = await createAuthenticatedUser('expired_sub@example.com', 'Expired Submitter');
+
+      // Create a campaign with past deadline directly in DB (simulating time passing after draft creation)
+      const campaign = await prisma.campaign.create({
+        data: {
+          creatorId: user.id,
+          slug: 'past-deadline-submit',
+          title: 'Past Deadline Campaign',
+          pitch: 'Pitch that was created with a past deadline.',
+          category: 'education',
+          story: validStory,
+          goalTnd: 5000,
+          deadline: new Date(Date.now() - 3600000), // 1 hour in the past
+          status: 'draft',
+        },
+      });
+
+      const res = await request(app.getHttpServer())
+        .post(`/campaigns/${campaign.id}/submit`)
+        .set('Origin', TEST_ALLOWED_ORIGIN)
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('deadline has already passed');
+
+      const inDb = await prisma.campaign.findUnique({ where: { id: campaign.id } });
+      expect(inDb?.status).toBe('draft');
     });
 
     it('rejects submitting someone else\'s campaign with 403 (Negative Test: Authorization)', async () => {

@@ -18,7 +18,6 @@ export const ALLOWED_NODE_TYPES = new Set([
   'blockquote',
   'hardBreak',
   'horizontalRule',
-  'image',
 ]);
 
 /** Allowed Tiptap mark types. */
@@ -69,16 +68,6 @@ export function validateStoryNode(node: unknown, path: string): string[] {
             errors.push(`${path}.marks[${i}]: link href must be http(s), got "${attrs.href}"`);
           }
         }
-      }
-    }
-  }
-
-  // Validate image src
-  if (n.type === 'image') {
-    const attrs = n.attrs as Record<string, unknown> | undefined;
-    if (attrs && typeof attrs.src === 'string') {
-      if (!isHttpUrl(attrs.src)) {
-        errors.push(`${path}: image src must be http(s), got "${attrs.src}"`);
       }
     }
   }

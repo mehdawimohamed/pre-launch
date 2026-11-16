@@ -52,25 +52,48 @@ export class CampaignsService {
 
   /**
    * Creates a draft campaign owned by the authenticated user.
+   * Survives concurrent unique-constraint collisions by regenerating a suffix and retrying.
    */
   async createDraft(userId: string, input: CreateCampaignInput): Promise<Campaign> {
-    const slug = await this.generateUniqueSlug(input.title);
+    const baseSlug = slugify(input.title);
+    let candidateSlug = await this.generateUniqueSlug(input.title);
+    let attempts = 0;
+    const maxAttempts = 5;
 
-    return this.prisma.campaign.create({
-      data: {
-        creatorId: userId,
-        slug,
-        title: input.title,
-        pitch: input.pitch,
-        category: input.category,
-        story: input.story as Prisma.InputJsonValue,
-        goalTnd: input.goalTnd,
-        deadline: input.deadline,
-        teamInfo: input.teamInfo ?? null,
-        links: (input.links ?? []) as unknown as Prisma.InputJsonValue,
-        status: 'draft',
-      },
-    });
+    while (attempts < maxAttempts) {
+      try {
+        return await this.prisma.campaign.create({
+          data: {
+            creatorId: userId,
+            slug: candidateSlug,
+            title: input.title,
+            pitch: input.pitch,
+            category: input.category,
+            story: input.story as Prisma.InputJsonValue,
+            goalTnd: input.goalTnd,
+            deadline: input.deadline,
+            teamInfo: input.teamInfo ?? null,
+            links: (input.links ?? []) as unknown as Prisma.InputJsonValue,
+            status: 'draft',
+          },
+        });
+      } catch (err: unknown) {
+        // P2002 is Prisma's unique constraint violation error code
+        const isUniqueConstraint =
+          err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002';
+
+        if (isUniqueConstraint && attempts < maxAttempts - 1) {
+          attempts++;
+          const randomSuffix = crypto.randomBytes(3).toString('hex');
+          const truncatedBase = baseSlug.slice(0, 72);
+          candidateSlug = `${truncatedBase}-${randomSuffix}`;
+          continue;
+        }
+        throw err;
+      }
+    }
+
+    throw new BadRequestException('Could not allocate a unique slug for this campaign. Please try again.');
   }
 
   /**
@@ -159,6 +182,13 @@ export class CampaignsService {
     if (!OWNER_SUBMITTABLE_STATUSES.includes(campaign.status as CampaignStatus)) {
       throw new BadRequestException(
         `Cannot submit campaign in "${campaign.status}" status. Only draft or rejected campaigns can be submitted for review.`,
+      );
+    }
+
+    // Re-validate deadline: must still be in the future at submit time
+    if (new Date(campaign.deadline).getTime() <= Date.now()) {
+      throw new BadRequestException(
+        'Cannot submit campaign: deadline has already passed. Please update the deadline to a future date before submitting.',
       );
     }
 
