@@ -1,0 +1,35 @@
+{
+  "common": {
+    "appName": "Tawassol",
+    "tagline": "Testez la demande pour vos projets en Tunisie",
+    "login": "Connexion",
+    "logout": "Déconnexion",
+    "loggingIn": "Connexion en cours...",
+    "profile": "Mon Profil",
+    "admin": "Administration",
+    "switchLanguage": "Changer de langue",
+    "languages": {
+      "fr": "Français",
+      "ar": "العربية",
+      "en": "English"
+    }
+  },
+  "nav": {
+    "explore": "Découvrir",
+    "launch": "Lancer un projet",
+    "howItWorks": "Comment ça marche"
+  },
+  "hero": {
+    "title": "Validez votre idée auprès de la communauté avant de vous lancer",
+    "subtitle": "Une plateforme de test de marché sans transaction financière réelle. Mobilisez vos premiers soutiens en un clic.",
+    "ctaExplore": "Explorer les projets",
+    "ctaStart": "Créer une campagne"
+  },
+  "auth": {
+    "signInWithGoogle": "Se connecter avec Google",
+    "signInTitle": "Bienvenue sur Tawassol",
+    "signInDescription": "Connectez-vous avec votre compte Google pour soutenir des projets et partager vos idées.",
+    "sessionActive": "Connecté en tant que",
+    "errorGeneric": "Échec de la connexion. Veuillez réessayer."
+  }
+}

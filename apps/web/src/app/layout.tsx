@@ -1,20 +1,5 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { ReactNode } from 'react';
 
-export const metadata: Metadata = {
-  title: 'Crowdfunding Platform',
-  description: 'Crowdfunding market test platform',
-};
-
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+export default function RootLayout({ children }: { children: ReactNode }) {
+  return children;
 }
-

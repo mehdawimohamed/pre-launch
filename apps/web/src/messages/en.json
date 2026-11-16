@@ -1,0 +1,35 @@
+{
+  "common": {
+    "appName": "Tawassol",
+    "tagline": "Validate demand for your projects in Tunisia",
+    "login": "Sign In",
+    "logout": "Sign Out",
+    "loggingIn": "Signing in...",
+    "profile": "My Profile",
+    "admin": "Admin Dashboard",
+    "switchLanguage": "Change language",
+    "languages": {
+      "fr": "Français",
+      "ar": "العربية",
+      "en": "English"
+    }
+  },
+  "nav": {
+    "explore": "Explore",
+    "launch": "Start a Project",
+    "howItWorks": "How It Works"
+  },
+  "hero": {
+    "title": "Validate your idea with the community before taking the leap",
+    "subtitle": "A market-test crowdfunding platform without real financial transactions. Rally early backers in one click.",
+    "ctaExplore": "Explore Campaigns",
+    "ctaStart": "Start a Campaign"
+  },
+  "auth": {
+    "signInWithGoogle": "Sign in with Google",
+    "signInTitle": "Welcome to Tawassol",
+    "signInDescription": "Sign in with your Google account to back campaigns and share your ideas.",
+    "sessionActive": "Signed in as",
+    "errorGeneric": "Sign-in failed. Please try again."
+  }
+}
