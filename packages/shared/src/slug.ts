@@ -29,6 +29,21 @@ export function transliterateArabic(text: string): string {
 }
 
 /**
+ * Strips leading and trailing hyphens without ReDoS risk.
+ */
+function trimHyphens(str: string): string {
+  let start = 0;
+  let end = str.length;
+  while (start < end && str[start] === '-') {
+    start++;
+  }
+  while (end > start && str[end - 1] === '-') {
+    end--;
+  }
+  return str.slice(start, end);
+}
+
+/**
  * Generates an initial safe ASCII slug candidate from title.
  * Max length is capped at 60 to leave room for suffix collision handling up to 80 chars.
  * Matches SQL check: CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND char_length(slug) <= 80)
@@ -36,16 +51,18 @@ export function transliterateArabic(text: string): string {
 export function slugify(title: string): string {
   const transliterated = transliterateArabic(title.trim().toLowerCase());
   
-  // Normalize and replace any non-alphanumeric character with hyphen
-  let slug = transliterated
+  // Linear-time parsing of alphanumeric words (O(n), immune to ReDoS)
+  const normalized = transliterated
     .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '') // remove diacritics
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/[\u0300-\u036f]/g, ''); // remove diacritics
 
-  // Truncate to 60 characters and trim trailing hyphens
+  // Split on non-alphanumeric chars, filter out empty pieces, join with '-'
+  const words = normalized.split(/[^a-z0-9]+/i).filter(Boolean);
+  let slug = words.join('-');
+
+  // Truncate to 60 characters and trim any trailing hyphens
   if (slug.length > 60) {
-    slug = slug.substring(0, 60).replace(/-+$/, '');
+    slug = trimHyphens(slug.substring(0, 60));
   }
 
   // Fallback if empty or stripped completely
