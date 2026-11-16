@@ -5,6 +5,7 @@ import { HealthModule } from './health/health.module';
 import { ConfigModule } from './config/config.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 import { getConfig } from './config/env.config';
 import { createLoggingModule } from './common/logging.module';
 import { AppThrottlerGuard } from './common/throttler.guard';
@@ -30,6 +31,7 @@ import { CsrfGuard } from './auth/csrf.guard';
     }),
     HealthModule,
     AuthModule,
+    CampaignsModule,
   ],
   providers: [
     {
